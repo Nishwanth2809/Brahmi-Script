@@ -2,4 +2,7 @@ tensorflow
 streamlit
 opencv-python-headless
 numpy
+scipy
 Pillow
+flask
+flask-cors

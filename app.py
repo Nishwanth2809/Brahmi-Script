@@ -21,8 +21,9 @@ def load_model_and_labels():
             if os.path.isdir(os.path.join(train_dir, d))
         ])
     else:
-        st.warning("Could not load class labels from dataset/train. Make sure it exists.")
-        class_labels = []
+        # Fallback: derive class labels from mapping (sorted alphabetically,
+        # matching the order Keras flow_from_directory used during training)
+        class_labels = sorted(mapping.keys())
     return model, class_labels
 
 # Load resources
