@@ -148,10 +148,9 @@ Note: the TensorFlow model file `brahmi_model.h5` is ignored by Git and can be t
 
 ## Deploy Backend
 
-The backend can run on any Python web host that supports TensorFlow wheels. This repo includes:
+The backend needs a Python web host that supports TensorFlow wheels. Vercel is not a good fit for this backend because the TensorFlow dependency bundle is larger than Vercel's Python function storage limit.
 
-- `vercel.json` for an experimental Vercel Python function deployment.
-- `render.yaml` for Render web service deployment.
+This repo includes `render.yaml` for Render web service deployment.
 
 Recommended Render settings:
 

@@ -1,7 +1,0 @@
-.git
-.venv
-__pycache__
-dataset
-front-end/.vercel
-front-end/dist
-front-end/node_modules

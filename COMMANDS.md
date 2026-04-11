@@ -82,3 +82,19 @@ python train.py
 ```bash
 python test.py
 ```
+
+## Deploy Backend on Render
+
+Use the repository's `render.yaml` blueprint, or create a Render web service with:
+
+```text
+Build Command: pip install -r requirements.txt
+Start Command: gunicorn api:app --bind 0.0.0.0:$PORT
+Health Check Path: /api/health
+```
+
+After Render gives you the backend URL, set this in the Vercel frontend project:
+
+```text
+VITE_API_BASE_URL=https://your-render-backend-url
+```
