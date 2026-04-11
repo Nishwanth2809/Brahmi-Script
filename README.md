@@ -1,101 +1,200 @@
-# 🕉️ AI-Based Brahmi Script Recognition and Translation System
+# Brahmi Script Recognition
 
-An AI-powered application that recognizes ancient **Brahmi script** characters from images and translates them into modern Indian scripts — **Telugu**, **Tamil**, and **Devanagari (Hindi)**.
+AI-powered Brahmi script recognition and transliteration system with a React frontend and Flask API. The app accepts an image of Brahmi text, segments characters, predicts each character with a TensorFlow model, and returns transliterations in Telugu, Tamil, and Devanagari/Hindi.
 
-## ✨ Features
+## Features
 
-- **Image Upload** — Upload images containing Brahmi script text
-- **Character Segmentation** — Automatically segments individual characters using OpenCV
-- **CNN Classification** — Classifies each character using a trained TensorFlow CNN model
-- **Multi-Script Translation** — Translates recognized characters to Telugu, Tamil, and Hindi
-- **Validation Pipeline** — Multi-stage image validation (edge density, contour analysis, morphology checks)
-- **Interactive UI** — Built with Streamlit for an easy-to-use web interface
+- Upload Brahmi script images from a browser UI.
+- Segment individual characters with OpenCV.
+- Classify characters with a TensorFlow/Keras CNN model.
+- Transliterate recognized characters to Telugu, Tamil, and Devanagari/Hindi.
+- Show the original image, tracked/boxed output, per-character confidence, and translated text.
+- Optional Streamlit app and training scripts are included for experimentation.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-| Technology | Purpose |
-|---|---|
-| **TensorFlow / Keras** | CNN model for character classification |
-| **OpenCV** | Image processing & character segmentation |
-| **Streamlit** | Web application UI |
-| **NumPy** | Numerical operations |
-| **Pillow** | Image handling & dataset generation |
+| Area | Tools |
+| --- | --- |
+| Frontend | React, TypeScript, Vite, Tailwind CSS, shadcn/ui |
+| Backend | Flask, Flask-CORS |
+| ML / Vision | TensorFlow/Keras, OpenCV, NumPy, Pillow |
+| Optional UI | Streamlit |
 
-## 📁 Project Structure
+## Project Structure
 
-```
+```text
 Brahmi-Script/
-├── app.py                      # Main Streamlit web app
-├── train.py                    # Model training script
-├── generate_dataset.py         # Synthetic dataset generation
-├── test.py                     # Model testing script
-├── mapping.py                  # Brahmi → Telugu/Tamil/Hindi mappings
-├── brahmi_model.h5             # Pre-trained CNN model
-├── NotoSansBrahmi-Regular.ttf  # Brahmi Unicode font
-├── requirements.txt            # Python dependencies
-├── COMMANDS.md                 # Detailed run commands
-├── REACT_PROMPTS.md            # React frontend prompts (future)
-└── .gitignore
+|-- api.py                         # Flask API and production frontend server
+|-- app.py                         # Optional Streamlit app
+|-- mapping.py                     # Brahmi to Telugu/Tamil/Hindi mappings
+|-- generate_dataset.py            # Synthetic dataset generator
+|-- train.py                       # CNN training script
+|-- test.py                        # Local model test script
+|-- class_labels.json              # Model label order
+|-- requirements.txt               # Python dependencies
+|-- NotoSansBrahmi-Regular.ttf     # Brahmi font used for dataset generation
+|-- front-end/
+|   |-- index.html
+|   |-- package.json
+|   |-- src/                       # React application source
+|   |-- public/                    # Public logo/favicon assets
+|   `-- vite.config.ts
+`-- .gitignore
 ```
 
-## 🚀 Quick Start
+Ignored local assets:
+
+- `brahmi_model.h5`
+- `dataset/`
+- `.venv/`
+- `front-end/node_modules/`
+- `front-end/dist/`
+
+The model and dataset can be large, so they are not committed to Git. Place `brahmi_model.h5` in the project root before running inference, or regenerate it with the training commands below.
+
+## Quick Start
 
 ### 1. Clone the repository
+
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Nishwanth2809/Brahmi-Script.git
 cd Brahmi-Script
 ```
 
-### 2. Create & activate virtual environment
+### 2. Set up the Python backend
+
 ```bash
 python -m venv .venv
-
-# Windows
 .venv\Scripts\activate
-
-# macOS / Linux
-source .venv/bin/activate
-```
-
-### 3. Install dependencies
-```bash
 pip install -r requirements.txt
 ```
 
-### 4. Run the app
+Make sure `brahmi_model.h5` exists in the project root. If it does not, generate a dataset and train the model first.
+
+### 3. Set up the React frontend
+
+```bash
+cd front-end
+npm install
+npm run dev
+```
+
+The Vite dev server runs on:
+
+```text
+http://localhost:8080
+```
+
+### 4. Run the Flask API
+
+In a second terminal from the project root:
+
+```bash
+.venv\Scripts\activate
+python api.py
+```
+
+The API runs on:
+
+```text
+http://localhost:5000
+```
+
+The frontend is configured to proxy `/api` requests to the Flask server during development.
+
+## Production-Style Run
+
+Build the frontend first:
+
+```bash
+cd front-end
+npm install
+npm run build
+```
+
+Then run the Flask server from the project root:
+
+```bash
+python api.py
+```
+
+When `front-end/dist` exists, Flask serves the built React app and API together from:
+
+```text
+http://localhost:5000
+```
+
+## API
+
+Health check:
+
+```http
+GET /api/health
+```
+
+Process an image:
+
+```http
+POST /api/process
+```
+
+Send the uploaded file as multipart form data with the field name `image`.
+
+## Model Training
+
+Generate a synthetic dataset:
+
+```bash
+python generate_dataset.py --clean
+```
+
+Train the model:
+
+```bash
+python train.py
+```
+
+Training writes:
+
+- `brahmi_model.h5`
+- `class_labels.json`
+- `training_history.json`
+
+## Optional Streamlit App
+
+The older Streamlit interface is still available:
+
 ```bash
 streamlit run app.py
 ```
 
-Then open your browser at **http://localhost:8501**
+Open:
 
-## 🧠 Model Training (Optional)
-
-The pre-trained model (`brahmi_model.h5`) is already included. To retrain:
-
-```bash
-# Step 1: Generate synthetic dataset
-python generate_dataset.py
-
-# Step 2: Train the CNN model
-python train.py
+```text
+http://localhost:8501
 ```
 
-## 🔤 Supported Characters
+## Supported Characters
 
-The system recognizes **34 Brahmi characters** covering the core consonant groups:
+The classifier covers 34 core Brahmi labels:
 
-| Group | Characters |
-|---|---|
-| **Vowel** | A |
-| **Velar** | KA, KHA, GA, GHA, NGA |
-| **Palatal** | CHA, CHHA, JA, JHA, NYA |
-| **Retroflex** | TTA, TTHA, DDA, DDHA, NNA |
-| **Dental** | TA, THA, DA, DHA, NA |
-| **Labial** | PA, PHA, BA, BHA, MA |
-| **Semivowel** | YA, RA, LA, VA |
-| **Sibilant** | SHA, SSA, SA, HA |
+```text
+A
+KA KHA GA GHA NGA
+CHA CHHA JA JHA NYA
+TTA TTHA DDA DDHA NNA
+TA THA DA DHA NA
+PA PHA BA BHA MA
+YA RA LA VA
+SHA SSA SA HA
+```
 
-## 📄 License
+## Repository
+
+```text
+https://github.com/Nishwanth2809/Brahmi-Script
+```
+
+## License
 
 This project is for educational and research purposes.
