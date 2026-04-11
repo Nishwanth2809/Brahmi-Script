@@ -1,4 +1,4 @@
-# Brahmi Script Recognition
+# 🕉️ AI-Based Brahmi Script Recognition and Translation System
 
 AI-powered Brahmi script recognition and transliteration system with a React frontend and Flask API. The app accepts an image of Brahmi text, segments characters, predicts each character with a TensorFlow model, and returns transliterations in Telugu, Tamil, and Devanagari/Hindi.
 
