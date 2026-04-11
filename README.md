@@ -9,7 +9,7 @@ AI-powered Brahmi script recognition and transliteration system with a React fro
 - Classify characters with a TensorFlow/Keras CNN model.
 - Transliterate recognized characters to Telugu, Tamil, and Devanagari/Hindi.
 - Show the original image, tracked/boxed output, per-character confidence, and translated text.
-- Optional Streamlit app and training scripts are included for experimentation.
+- Training and dataset generation scripts are included for experimentation.
 
 ## Tech Stack
 
@@ -18,14 +18,12 @@ AI-powered Brahmi script recognition and transliteration system with a React fro
 | Frontend | React, TypeScript, Vite, Tailwind CSS, shadcn/ui |
 | Backend | Flask, Flask-CORS |
 | ML / Vision | TensorFlow/Keras, OpenCV, NumPy, Pillow |
-| Optional UI | Streamlit |
 
 ## Project Structure
 
 ```text
 Brahmi-Script/
 |-- api.py                         # Flask API and production frontend server
-|-- app.py                         # Optional Streamlit app
 |-- mapping.py                     # Brahmi to Telugu/Tamil/Hindi mappings
 |-- generate_dataset.py            # Synthetic dataset generator
 |-- train.py                       # CNN training script
@@ -159,20 +157,6 @@ Training writes:
 - `brahmi_model.h5`
 - `class_labels.json`
 - `training_history.json`
-
-## Optional Streamlit App
-
-The older Streamlit interface is still available:
-
-```bash
-streamlit run app.py
-```
-
-Open:
-
-```text
-http://localhost:8501
-```
 
 ## Supported Characters
 

@@ -1,5 +1,4 @@
 tensorflow
-streamlit
 opencv-python-headless
 numpy
 scipy

@@ -1,106 +1,84 @@
-# 🕉️ Brahmi Script Recognition — Run Commands
+# Brahmi Script Recognition - Run Commands
 
-## 📁 Project Structure
+## Install Backend Dependencies
 
-```
-brahmi_dataset_generator/
-├── app.py                      # Main Streamlit web app
-├── train.py                    # Model training script
-├── generate_dataset.py         # Dataset generation script
-├── test.py                     # Testing script
-├── mapping.py                  # Brahmi character mappings
-├── brahmi_model.h5             # Pre-trained model
-├── NotoSansBrahmi-Regular.ttf  # Brahmi font
-├── dataset/                    # Training dataset
-└── requirements.txt            # Python dependencies
-```
-
----
-
-## ⚙️ Setup (First Time Only)
-
-### 1. Navigate to the project directory
 ```bash
-cd /Users/samithvangeti/Documents/dataset_KA/brahmi_dataset_generator
-```
-
-### 2. (Optional) Create and activate a virtual environment
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install dependencies
-```bash
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
----
-
-## 🚀 Run the App
+## Install Frontend Dependencies
 
 ```bash
-streamlit run app.py
+cd front-end
+npm install
 ```
 
-Then open your browser at:
-- **Local:** http://localhost:8501
-- **Network:** http://172.20.10.4:8501
+## Development Run
 
----
-
-## 🗃️ Generate Dataset
+Start the Flask API from the project root:
 
 ```bash
-python generate_dataset.py
+.venv\Scripts\activate
+python api.py
 ```
 
----
+Start the React dev server from `front-end` in a second terminal:
 
-## 🧠 Train the Model
+```bash
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:8080
+```
+
+The Vite dev server proxies `/api` calls to Flask at `http://localhost:5000`.
+
+## Production-Style Run
+
+Build the React frontend:
+
+```bash
+cd front-end
+npm run build
+```
+
+Run Flask from the project root:
+
+```bash
+python api.py
+```
+
+Open:
+
+```text
+http://localhost:5000
+```
+
+## API Checks
+
+```bash
+curl http://localhost:5000/api/health
+```
+
+## Generate Dataset
+
+```bash
+python generate_dataset.py --clean
+```
+
+## Train Model
 
 ```bash
 python train.py
 ```
 
----
-
-## 🧪 Test the Model
+## Test Model Locally
 
 ```bash
 python test.py
 ```
-
----
-
-## 🔁 Full Pipeline (First Run)
-
-```bash
-# Step 1: Install dependencies
-pip install -r requirements.txt
-
-# Step 2: Generate dataset
-python generate_dataset.py
-
-# Step 3: Train the model
-python train.py
-
-# Step 4: Launch the app
-streamlit run app.py
-```
-
----
-
-## 📦 Dependencies
-
-| Package         | Purpose                        |
-|----------------|--------------------------------|
-| `tensorflow`   | Deep learning / CNN model      |
-| `streamlit`    | Web app UI                     |
-| `opencv-python`| Image processing               |
-| `numpy`        | Numerical operations           |
-| `Pillow`       | Image handling                 |
-
----
-
-> **Note:** The pre-trained model `brahmi_model.h5` is already included, so you can skip dataset generation and training and directly run the app.
