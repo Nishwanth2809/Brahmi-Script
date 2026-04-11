@@ -146,6 +146,27 @@ Leave `VITE_API_BASE_URL` empty for local development. The local Vite server use
 
 Note: the TensorFlow model file `brahmi_model.h5` is ignored by Git and can be too large for a simple Vercel static frontend deployment. Deploy the Flask API on a backend-friendly host, then point `VITE_API_BASE_URL` to that backend URL.
 
+## Deploy Backend
+
+The backend can run on any Python web host that supports TensorFlow wheels. This repo includes:
+
+- `vercel.json` for an experimental Vercel Python function deployment.
+- `render.yaml` for Render web service deployment.
+
+Recommended Render settings:
+
+```text
+Build Command: pip install -r requirements.txt
+Start Command: gunicorn api:app --bind 0.0.0.0:$PORT
+Health Check Path: /api/health
+```
+
+After the backend is live, set the frontend environment variable in Vercel:
+
+```text
+VITE_API_BASE_URL=https://your-backend-url
+```
+
 ## API
 
 Health check:

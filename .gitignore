@@ -1,6 +1,7 @@
 # Dataset & Model
 dataset/
 *.h5
+!brahmi_model.h5
 
 # Virtual Environment
 .venv/
