@@ -122,6 +122,30 @@ When `front-end/dist` exists, Flask serves the built React app and API together 
 http://localhost:5000
 ```
 
+## Deploy Frontend on Vercel
+
+This repository's Vercel app should use the `front-end` folder as the project root.
+
+Vercel settings:
+
+```text
+Framework Preset: Vite
+Root Directory: front-end
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+```
+
+If your Flask backend is deployed separately, add this Vercel environment variable:
+
+```text
+VITE_API_BASE_URL=https://your-backend-url
+```
+
+Leave `VITE_API_BASE_URL` empty for local development. The local Vite server uses the proxy in `front-end/vite.config.ts` and sends `/api` requests to `http://localhost:5000`.
+
+Note: the TensorFlow model file `brahmi_model.h5` is ignored by Git and can be too large for a simple Vercel static frontend deployment. Deploy the Flask API on a backend-friendly host, then point `VITE_API_BASE_URL` to that backend URL.
+
 ## API
 
 Health check:

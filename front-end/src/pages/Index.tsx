@@ -28,6 +28,8 @@ interface ApiResponse {
   error?: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "";
+
 const Index = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -59,7 +61,7 @@ const Index = () => {
     const formData = new FormData();
     formData.append("image", uploadedFile);
 
-    fetch("/api/process", {
+    fetch(`${API_BASE_URL}/api/process`, {
       method: "POST",
       body: formData,
     })
