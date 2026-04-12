@@ -40,7 +40,9 @@ def load_model() -> tf.keras.Model | None:
     if not MODEL_PATH.exists():
         return None
 
-    return tf.keras.models.load_model(MODEL_PATH, compile=False)
+    loaded_model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+    loaded_model.predict(np.zeros((1, 64, 64, 3), dtype=np.float32), verbose=0)
+    return loaded_model
 
 
 model = load_model()
@@ -156,6 +158,8 @@ def process_image():
 
     img_with_boxes = img.copy()
     predictions = []
+    char_inputs = []
+    char_metadata = []
 
     for contour in valid_contours:
         x, y, w, h = cv2.boundingRect(contour)
@@ -177,17 +181,9 @@ def process_image():
         canvas[y_offset : y_offset + new_h, x_offset : x_offset + new_w] = char
 
         char_rgb = cv2.cvtColor(canvas, cv2.COLOR_GRAY2RGB)
-        char_input = np.expand_dims(char_rgb / 255.0, axis=0)
-
-        pred = model.predict(char_input, verbose=0)
-        idx = int(np.argmax(pred))
-        label = class_labels[idx]
-        confidence = float(pred[0][idx])
-
-        predictions.append(
+        char_inputs.append((char_rgb / 255.0).astype(np.float32))
+        char_metadata.append(
             {
-                "label": label,
-                "confidence": confidence,
                 "char_image": encode_image_b64(canvas),
                 "x": int(x),
                 "y": int(y),
@@ -195,6 +191,18 @@ def process_image():
                 "h": int(h),
             }
         )
+
+    if char_inputs:
+        batch_predictions = model.predict(np.stack(char_inputs, axis=0), verbose=0)
+        for metadata, pred in zip(char_metadata, batch_predictions):
+            idx = int(np.argmax(pred))
+            predictions.append(
+                {
+                    "label": class_labels[idx],
+                    "confidence": float(pred[idx]),
+                    **metadata,
+                }
+            )
 
     avg_conf = np.mean([prediction["confidence"] for prediction in predictions]) if predictions else 0.0
 
