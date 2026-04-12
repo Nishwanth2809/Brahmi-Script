@@ -312,6 +312,15 @@ def serve_frontend(path: str):
     if index_file.exists():
         return send_from_directory(str(FRONTEND_DIST_DIR), "index.html")
 
+    if not path:
+        return jsonify(
+            {
+                "status": "ok",
+                "service": "Brahmi Script API",
+                "health": "/api/health",
+            }
+        )
+
     return jsonify(
         {
             "error": "Frontend build not found. Run `npm run build` inside `front-end` first."
