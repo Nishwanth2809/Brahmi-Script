@@ -9,10 +9,9 @@ const steps = [
 
 interface ProcessingOverlayProps {
   isVisible: boolean;
-  onComplete: () => void;
 }
 
-const ProcessingOverlay = ({ isVisible, onComplete }: ProcessingOverlayProps) => {
+const ProcessingOverlay = ({ isVisible }: ProcessingOverlayProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -23,31 +22,19 @@ const ProcessingOverlay = ({ isVisible, onComplete }: ProcessingOverlayProps) =>
       return;
     }
 
-    // Smooth progress bar
     const progressInterval = setInterval(() => {
-      setProgress((p) => {
-        const target = ((currentStep + 1) / steps.length) * 100;
-        if (p >= target) return p;
-        return p + 0.5;
-      });
-    }, 20);
+      setProgress((p) => Math.min(95, p + 0.4));
+    }, 40);
 
     const interval = setInterval(() => {
-      setCurrentStep((prev) => {
-        if (prev >= steps.length - 1) {
-          clearInterval(interval);
-          setTimeout(onComplete, 800);
-          return prev;
-        }
-        return prev + 1;
-      });
+      setCurrentStep((prev) => Math.min(steps.length - 1, prev + 1));
     }, 1100);
 
     return () => {
       clearInterval(interval);
       clearInterval(progressInterval);
     };
-  }, [isVisible, onComplete, currentStep]);
+  }, [isVisible]);
 
   if (!isVisible) return null;
 

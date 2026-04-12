@@ -53,7 +53,7 @@ const Index = () => {
     setError(null);
   }, []);
 
-  const handleProcess = () => {
+  const handleProcess = async () => {
     if (!uploadedFile) return;
     setIsProcessing(true);
     setError(null);
@@ -61,44 +61,46 @@ const Index = () => {
     const formData = new FormData();
     formData.append("image", uploadedFile);
 
-    fetch(`${API_BASE_URL}/api/process`, {
-      method: "POST",
-      body: formData,
-    })
-      .then(async (res) => {
-        const data: ApiResponse = await res.json();
-        if (!res.ok || data.error) {
-          throw new Error(data.error || "Processing failed");
-        }
-        return data;
-      })
-      .then((data) => {
-        const characters: CharacterPrediction[] = data.predictions.map((p) => ({
-          imageSrc: p.char_image,
-          label: p.label,
-          confidence: p.confidence,
-          telugu: p.telugu,
-          tamil: p.tamil,
-          hindi: p.hindi,
-        }));
-
-        setTrackedImage(data.tracked_image);
-        setResults({
-          characters,
-          telugu: data.telugu_sequence,
-          tamil: data.tamil_sequence,
-          devanagari: data.hindi_sequence,
-        });
-      })
-      .catch((err) => {
-        setError(err.message || "Failed to process image. Is the backend running?");
-        setIsProcessing(false);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/process`, {
+        method: "POST",
+        body: formData,
       });
-  };
 
-  const handleProcessingComplete = useCallback(() => {
-    setIsProcessing(false);
-  }, []);
+      const isJson = res.headers.get("content-type")?.includes("application/json");
+      const data = isJson ? ((await res.json()) as ApiResponse) : null;
+
+      if (!res.ok || data?.error) {
+        throw new Error(data?.error || `Processing failed (${res.status})`);
+      }
+
+      if (!data) {
+        throw new Error("Processing failed: backend returned an empty response.");
+      }
+
+      const characters: CharacterPrediction[] = data.predictions.map((p) => ({
+        imageSrc: p.char_image,
+        label: p.label,
+        confidence: p.confidence,
+        telugu: p.telugu,
+        tamil: p.tamil,
+        hindi: p.hindi,
+      }));
+
+      setTrackedImage(data.tracked_image);
+      setResults({
+        characters,
+        telugu: data.telugu_sequence,
+        tamil: data.tamil_sequence,
+        devanagari: data.hindi_sequence,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to process image. Is the backend running?";
+      setError(message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -150,7 +152,6 @@ const Index = () => {
       {/* Processing Overlay */}
       <ProcessingOverlay
         isVisible={isProcessing}
-        onComplete={handleProcessingComplete}
       />
 
       {/* Footer */}
