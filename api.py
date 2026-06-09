@@ -25,7 +25,20 @@ MODEL_PATH = BASE_DIR / "brahmi_model.h5"
 CLASS_LABELS_PATH = BASE_DIR / "class_labels.json"
 
 app = Flask(__name__, static_folder=str(FRONTEND_DIST_DIR), static_url_path="")
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(
+    app,
+    resources={r"/api/*": {"origins": [
+        "https://brahmi-script-evolution.vercel.app",
+        "https://brahmi-script.vercel.app",
+        "http://localhost:8080",
+        "http://localhost:5000",
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:5000",
+    ]}},
+    supports_credentials=False,
+    allow_headers=["Content-Type"],
+    methods=["GET", "POST", "OPTIONS"],
+)
 
 
 def load_class_labels() -> list[str]:
@@ -77,6 +90,38 @@ def process_image():
         ), 400
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Reject colorful images (digital UI screenshots, photos with colored content).
+    # Brahmi script documents are black ink on white/cream paper — near-zero saturation.
+    # Use pixel-ratio instead of mean: even a small blue sidebar or colorful icons
+    # will push the ratio above the threshold, while a white/cream background won't.
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    total_pixels = hsv[:, :, 1].size
+    high_sat_pixels = int(np.sum(hsv[:, :, 1] > 60))
+    high_sat_ratio = high_sat_pixels / total_pixels
+    if high_sat_ratio > 0.015:  # More than 1.5% colorful pixels → not a Brahmi scan
+        return jsonify(
+            {
+                "error": (
+                    "Invalid Image: The image contains significant color content. "
+                    "Please upload a black-and-white scan or photo of Brahmi script."
+                )
+            }
+        ), 400
+
+    # Reject dark-background images (digital screenshots, UI captures, photos of dark surfaces).
+    # Brahmi script documents are always on light/white backgrounds.
+    mean_brightness = float(np.mean(gray))
+    if mean_brightness < 100:
+        return jsonify(
+            {
+                "error": (
+                    "Invalid Image: The image background appears to be dark. "
+                    "Please upload a scan or photo of Brahmi script on a light background."
+                )
+            }
+        ), 400
+
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
 
     edges = cv2.Canny(gray, 50, 150)
@@ -109,7 +154,7 @@ def process_image():
         if cv2.boundingRect(contour)[2] >= 10 and cv2.boundingRect(contour)[3] >= 10
     ]
 
-    if len(valid_contours) > 500:
+    if len(valid_contours) > 80:
         return jsonify(
             {"error": "Invalid Image: Too many objects detected, likely not Brahmi script."}
         ), 400
@@ -143,7 +188,9 @@ def process_image():
 
         mean_solidity = np.mean(solidities)
         mean_aspect_ratio = np.mean(aspect_ratios)
-        if mean_solidity > 0.65 or mean_aspect_ratio > 1.4:
+        # Reject only when contours are excessively wide (UI buttons/text-fields) OR
+        # the size variation is compounded by near-perfect rectangular fills.
+        if mean_aspect_ratio > 3.0 or (mean_solidity > 0.90 and mean_aspect_ratio > 2.0):
             return jsonify(
                 {
                     "error": (

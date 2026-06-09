@@ -9,9 +9,11 @@ const steps = [
 
 interface ProcessingOverlayProps {
   isVisible: boolean;
+  isWakingUp?: boolean;
+  wakeUpCountdown?: number;
 }
 
-const ProcessingOverlay = ({ isVisible }: ProcessingOverlayProps) => {
+const ProcessingOverlay = ({ isVisible, isWakingUp = false, wakeUpCountdown = 0 }: ProcessingOverlayProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -64,79 +66,91 @@ const ProcessingOverlay = ({ isVisible }: ProcessingOverlayProps) => {
         </div>
 
         <h3 className="text-2xl font-serif font-bold text-foreground mb-2 text-glow">
-          Processing Your Image
+          {isWakingUp ? "Waking Up Server" : "Processing Your Image"}
         </h3>
         <p className="text-sm text-muted-foreground mb-8">
-          Analyzing ancient Brahmi script patterns...
+          {isWakingUp
+            ? `The backend is starting up on Render's free tier. Retrying in ~${wakeUpCountdown * 5}s…`
+            : "Analyzing ancient Brahmi script patterns..."}
         </p>
 
         {/* Global progress bar */}
         <div className="w-full h-1 rounded-full bg-border/50 mb-8 overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-300 ease-out gold-gradient"
-            style={{ width: `${progress}%` }}
+            style={{ width: isWakingUp ? `${((12 - wakeUpCountdown) / 12) * 100}%` : `${progress}%` }}
           />
         </div>
 
-        {/* Steps */}
-        <div className="space-y-3 text-left">
-          {steps.map((step, i) => (
-            <div
-              key={step.label}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-500 ${
-                i < currentStep
-                  ? "bg-success/10 border border-success/20"
-                  : i === currentStep
-                  ? "bg-gold/10 border border-gold/20 glow-gold"
-                  : "opacity-40"
-              }`}
-              style={{
-                transitionDelay: `${i * 50}ms`,
-              }}
-            >
-              <span
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all duration-500 ${
+        {/* Steps or wake-up message */}
+        {isWakingUp ? (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gold/10 border border-gold/20 glow-gold">
+            <span className="text-2xl animate-pulse">⏳</span>
+            <div>
+              <span className="text-sm font-semibold text-gold block">Server is cold-starting</span>
+              <span className="text-xs text-muted-foreground">Render free tier spins down after inactivity. Hang tight!</span>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3 text-left">
+            {steps.map((step, i) => (
+              <div
+                key={step.label}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-500 ${
                   i < currentStep
-                    ? "bg-success/20 text-success"
+                    ? "bg-success/10 border border-success/20"
                     : i === currentStep
-                    ? "bg-gold/20 text-gold"
-                    : "bg-border/30 text-muted-foreground"
+                    ? "bg-gold/10 border border-gold/20 glow-gold"
+                    : "opacity-40"
                 }`}
+                style={{
+                  transitionDelay: `${i * 50}ms`,
+                }}
               >
-                {i < currentStep ? "✓" : i + 1}
-              </span>
-              <div className="flex-1 min-w-0">
                 <span
-                  className={`text-sm font-semibold block ${
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all duration-500 ${
                     i < currentStep
-                      ? "text-success"
+                      ? "bg-success/20 text-success"
                       : i === currentStep
-                      ? "text-gold"
-                      : "text-muted-foreground"
+                      ? "bg-gold/20 text-gold"
+                      : "bg-border/30 text-muted-foreground"
                   }`}
                 >
-                  {step.label}
+                  {i < currentStep ? "✓" : i + 1}
                 </span>
+                <div className="flex-1 min-w-0">
+                  <span
+                    className={`text-sm font-semibold block ${
+                      i < currentStep
+                        ? "text-success"
+                        : i === currentStep
+                        ? "text-gold"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                  {i === currentStep && (
+                    <span className="text-xs text-muted-foreground animate-fade-in">
+                      {step.detail}
+                    </span>
+                  )}
+                </div>
                 {i === currentStep && (
-                  <span className="text-xs text-muted-foreground animate-fade-in">
-                    {step.detail}
+                  <span className="flex gap-1">
+                    {[0, 1, 2].map((d) => (
+                      <span
+                        key={d}
+                        className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse"
+                        style={{ animationDelay: `${d * 0.2}s` }}
+                      />
+                    ))}
                   </span>
                 )}
               </div>
-              {i === currentStep && (
-                <span className="flex gap-1">
-                  {[0, 1, 2].map((d) => (
-                    <span
-                      key={d}
-                      className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse"
-                      style={{ animationDelay: `${d * 0.2}s` }}
-                    />
-                  ))}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

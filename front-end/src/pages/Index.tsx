@@ -53,6 +53,24 @@ const Index = () => {
     setError(null);
   }, []);
 
+  const [isWakingUp, setIsWakingUp] = useState(false);
+  const [wakeUpCountdown, setWakeUpCountdown] = useState(0);
+
+  const waitForBackend = useCallback(async (): Promise<boolean> => {
+    const maxAttempts = 12; // 60 seconds
+    for (let i = 0; i < maxAttempts; i++) {
+      setWakeUpCountdown(maxAttempts - i);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/health`);
+        if (res.ok) return true;
+      } catch {
+        // still sleeping
+      }
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+    return false;
+  }, []);
+
   const handleProcess = async () => {
     if (!uploadedFile) return;
     setIsProcessing(true);
@@ -61,7 +79,7 @@ const Index = () => {
     const formData = new FormData();
     formData.append("image", uploadedFile);
 
-    try {
+    const doFetch = async () => {
       const res = await fetch(`${API_BASE_URL}/api/process`, {
         method: "POST",
         body: formData,
@@ -76,6 +94,32 @@ const Index = () => {
 
       if (!data) {
         throw new Error("Processing failed: backend returned an empty response.");
+      }
+
+      return data;
+    };
+
+    try {
+      let data: ApiResponse;
+      try {
+        data = await doFetch();
+      } catch (firstErr) {
+        const isNetworkOrGateway =
+          (firstErr instanceof TypeError && firstErr.message === "Failed to fetch") ||
+          (firstErr instanceof Error && firstErr.message.includes("502"));
+
+        if (isNetworkOrGateway) {
+          setIsWakingUp(true);
+          const isUp = await waitForBackend();
+          setIsWakingUp(false);
+          setWakeUpCountdown(0);
+          if (!isUp) {
+            throw new Error("The backend did not respond after 60 seconds. Please try again later.");
+          }
+          data = await doFetch();
+        } else {
+          throw firstErr;
+        }
       }
 
       const characters: CharacterPrediction[] = data.predictions.map((p) => ({
@@ -97,13 +141,16 @@ const Index = () => {
     } catch (err) {
       let message = "Failed to process image. Please try again.";
       if (err instanceof TypeError && err.message === "Failed to fetch") {
-        message = "Could not reach the backend. It may be waking up — please wait 30 seconds and try again.";
+        message =
+          "Could not reach the backend. It may be waking up — please wait 30 seconds and try again.";
       } else if (err instanceof Error) {
         message = err.message;
       }
       setError(message);
     } finally {
       setIsProcessing(false);
+      setIsWakingUp(false);
+      setWakeUpCountdown(0);
     }
   };
 
@@ -157,6 +204,8 @@ const Index = () => {
       {/* Processing Overlay */}
       <ProcessingOverlay
         isVisible={isProcessing}
+        isWakingUp={isWakingUp}
+        wakeUpCountdown={wakeUpCountdown}
       />
 
       {/* Footer */}
