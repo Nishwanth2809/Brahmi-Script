@@ -1,0 +1,15 @@
+{
+  "buildCommand": "cd front-end && npm install && npm run build",
+  "outputDirectory": "front-end/dist",
+  "installCommand": "echo skip",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://brahmi-script.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
