@@ -9,7 +9,12 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from pathlib import Path
+
+# Suppress TensorFlow C++ INFO and WARNING logs (AVX2/FMA compile-flag noise).
+# Must be set before importing tensorflow.
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 
 import cv2
 import numpy as np
