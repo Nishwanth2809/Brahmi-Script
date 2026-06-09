@@ -95,7 +95,12 @@ const Index = () => {
         devanagari: data.hindi_sequence,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to process image. Is the backend running?";
+      let message = "Failed to process image. Please try again.";
+      if (err instanceof TypeError && err.message === "Failed to fetch") {
+        message = "Could not reach the backend. It may be waking up — please wait 30 seconds and try again.";
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
       setError(message);
     } finally {
       setIsProcessing(false);
