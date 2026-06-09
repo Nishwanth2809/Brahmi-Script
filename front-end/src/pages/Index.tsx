@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import HeroSection from "@/components/HeroSection";
 import Navbar from "@/components/Navbar";
 import AncientParticles from "@/components/AncientParticles";
@@ -55,6 +55,17 @@ const Index = () => {
 
   const [isWakingUp, setIsWakingUp] = useState(false);
   const [wakeUpCountdown, setWakeUpCountdown] = useState(0);
+
+  // Pre-warm the Render backend on page load and keep it alive every 10 minutes.
+  // Render free tier spins down after 15 min of inactivity — this prevents cold starts.
+  useEffect(() => {
+    const ping = () => {
+      fetch(`${API_BASE_URL}/api/health`).catch(() => {/* silent — server may be sleeping */});
+    };
+    ping(); // immediate warm-up on mount
+    const id = setInterval(ping, 10 * 60 * 1000); // every 10 minutes
+    return () => clearInterval(id);
+  }, []);
 
   const waitForBackend = useCallback(async (): Promise<boolean> => {
     const maxAttempts = 12; // 60 seconds
