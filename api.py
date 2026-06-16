@@ -37,9 +37,9 @@ CORS(
         "https://brahmi-script.vercel.app",
         "https://front-end-delta-brown.vercel.app",
         "http://localhost:8080",
-        "http://localhost:5000",
+        "http://localhost:5001",
         "http://127.0.0.1:8080",
-        "http://127.0.0.1:5000",
+        "http://127.0.0.1:5001",
     ]}},
     supports_credentials=False,
     allow_headers=["Content-Type"],
@@ -383,4 +383,4 @@ def serve_frontend(path: str):
 
 if __name__ == "__main__":
     print(f"Brahmi API running with {len(class_labels)} classes available")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
