@@ -58,9 +58,10 @@ const Index = () => {
 
   // Pre-warm the Render backend on page load and keep it alive every 10 minutes.
   // Render free tier spins down after 15 min of inactivity — this prevents cold starts.
+  // Use the Vercel proxy path (/api/health) to avoid CORS issues on cold-start 502s.
   useEffect(() => {
     const ping = () => {
-      fetch(`${API_BASE_URL}/api/health`)
+      fetch("/api/health")
         .then(() => {/* warm-up request sent — response not needed */})
         .catch(() => {/* silent — server may be sleeping, that's expected */});
     };
@@ -73,15 +74,20 @@ const Index = () => {
 
   const waitForBackend = useCallback(async (): Promise<boolean> => {
     const maxAttempts = MAX_WAKE_UP_ATTEMPTS;
+    // Always poll health through the Vercel same-origin proxy (/api/health),
+    // NOT directly to Render. When Render is cold-starting it returns 502 with
+    // NO CORS headers, which the browser blocks as a CORS error. Same-origin
+    // requests through Vercel's rewrite proxy are never subject to CORS.
+    const healthUrl = "/api/health";
     for (let i = 0; i < maxAttempts; i++) {
       setWakeUpCountdown(maxAttempts - i);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/health`);
+        const res = await fetch(healthUrl);
         // 200 OK means the server is fully up and the model is loaded
         if (res.status === 200) return true;
         // 502/503 means still starting — keep waiting
       } catch {
-        // Network error / CORS block — server is still sleeping
+        // Network error — server is still sleeping
       }
       await new Promise((r) => setTimeout(r, 5000));
     }
