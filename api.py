@@ -35,6 +35,7 @@ CORS(
     resources={r"/api/*": {"origins": [
         "https://brahmi-script-evolution.vercel.app",
         "https://brahmi-script.vercel.app",
+        "https://front-end-delta-brown.vercel.app",
         "http://localhost:8080",
         "http://localhost:5000",
         "http://127.0.0.1:8080",
