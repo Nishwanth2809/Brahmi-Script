@@ -69,8 +69,10 @@ const Index = () => {
     return () => clearInterval(id);
   }, []);
 
+  const MAX_WAKE_UP_ATTEMPTS = 48; // 240 seconds — Render free tier can take 90-180s to cold-start with TensorFlow
+
   const waitForBackend = useCallback(async (): Promise<boolean> => {
-    const maxAttempts = 24; // 120 seconds — Render cold start can take up to 90s
+    const maxAttempts = MAX_WAKE_UP_ATTEMPTS;
     for (let i = 0; i < maxAttempts; i++) {
       setWakeUpCountdown(maxAttempts - i);
       try {
@@ -226,6 +228,7 @@ const Index = () => {
         isVisible={isProcessing}
         isWakingUp={isWakingUp}
         wakeUpCountdown={wakeUpCountdown}
+        maxWakeUpAttempts={MAX_WAKE_UP_ATTEMPTS}
       />
 
       {/* Footer */}

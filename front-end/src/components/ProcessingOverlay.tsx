@@ -11,9 +11,10 @@ interface ProcessingOverlayProps {
   isVisible: boolean;
   isWakingUp?: boolean;
   wakeUpCountdown?: number;
+  maxWakeUpAttempts?: number;
 }
 
-const ProcessingOverlay = ({ isVisible, isWakingUp = false, wakeUpCountdown = 0 }: ProcessingOverlayProps) => {
+const ProcessingOverlay = ({ isVisible, isWakingUp = false, wakeUpCountdown = 0, maxWakeUpAttempts = 48 }: ProcessingOverlayProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -70,7 +71,7 @@ const ProcessingOverlay = ({ isVisible, isWakingUp = false, wakeUpCountdown = 0 
         </h3>
         <p className="text-sm text-muted-foreground mb-8">
           {isWakingUp
-            ? `The backend is starting up on Render's free tier. Retrying in ~${wakeUpCountdown * 5}s…`
+            ? `The backend is starting up on Render's free tier. This may take up to 3 minutes\u2026`
             : "Analyzing ancient Brahmi script patterns..."}
         </p>
 
@@ -78,7 +79,7 @@ const ProcessingOverlay = ({ isVisible, isWakingUp = false, wakeUpCountdown = 0 
         <div className="w-full h-1 rounded-full bg-border/50 mb-8 overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-300 ease-out gold-gradient"
-            style={{ width: isWakingUp ? `${((12 - wakeUpCountdown) / 12) * 100}%` : `${progress}%` }}
+            style={{ width: isWakingUp ? `${((maxWakeUpAttempts - wakeUpCountdown) / maxWakeUpAttempts) * 100}%` : `${progress}%` }}
           />
         </div>
 
