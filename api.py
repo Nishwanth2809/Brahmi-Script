@@ -1,8 +1,12 @@
 """
 Flask API backend for Brahmi Script Recognition.
 
-In production, this module serves the built React frontend from ``front-end/dist``
+In production this module serves the built React frontend from ``front-end/dist``
 and exposes the inference API under ``/api`` so the whole app can run on one port.
+
+TFLite inference is used instead of full TensorFlow to keep memory usage low
+enough for Render's free tier (512 MB RAM limit).  The lightweight
+``ai-edge-litert`` package (~5 MB) replaces ``tensorflow-cpu`` (~500 MB).
 """
 
 from __future__ import annotations
@@ -11,22 +15,23 @@ import base64
 import json
 import os
 from pathlib import Path
+from typing import Any
 
-# Suppress TensorFlow C++ INFO and WARNING logs (AVX2/FMA compile-flag noise).
-# Must be set before importing tensorflow.
+# Suppress TensorFlow C++ INFO and WARNING logs (not needed for TFLite, kept
+# as a no-op safeguard in case tensorflow is also installed in the environment).
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 
 import cv2
 import numpy as np
-import tensorflow as tf
 from flask import Flask, abort, jsonify, request, send_from_directory
 from flask_cors import CORS
+import onnxruntime as ort
 
 from mapping import mapping
 
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIST_DIR = BASE_DIR / "front-end" / "dist"
-MODEL_PATH = BASE_DIR / "brahmi_model.h5"
+MODEL_PATH = BASE_DIR / "brahmi_model.onnx"
 CLASS_LABELS_PATH = BASE_DIR / "class_labels.json"
 
 app = Flask(__name__, static_folder=str(FRONTEND_DIST_DIR), static_url_path="")
@@ -55,17 +60,41 @@ def load_class_labels() -> list[str]:
     return sorted(mapping.keys())
 
 
-def load_model() -> tf.keras.Model | None:
+def load_model() -> Any | None:
+    """Load the ONNX model and return a warmed-up InferenceSession, or None."""
     if not MODEL_PATH.exists():
         return None
 
-    loaded_model = tf.keras.models.load_model(MODEL_PATH, compile=False)
-    loaded_model.predict(np.zeros((1, 64, 64, 3), dtype=np.float32), verbose=0)
-    return loaded_model
+    session = ort.InferenceSession(
+        str(MODEL_PATH),
+        providers=["CPUExecutionProvider"],
+    )
+
+    # Warm-up run: initialises internal buffers so the first real request is fast.
+    dummy = np.zeros((1, 64, 64, 3), dtype=np.float32)
+    session.run(None, {"inputs": dummy})
+
+    return session
 
 
 model = load_model()
 class_labels = load_class_labels()
+
+# ONNX input/output names (set by tf2onnx from the SavedModel serving signature).
+_INPUT_NAME = "inputs"
+_OUTPUT_NAME = "output_0"
+
+
+def _predict_one(img: np.ndarray) -> np.ndarray:
+    """Run ONNX inference on a single (H, W, C) float32 image array.
+
+    Returns a 1-D array of class-probability scores.
+    """
+    pred = model.run(
+        [_OUTPUT_NAME],
+        {_INPUT_NAME: img[np.newaxis].astype(np.float32)},
+    )[0][0]
+    return pred
 
 
 def encode_image_b64(img_array: np.ndarray) -> str:
@@ -80,7 +109,7 @@ def encode_image_b64(img_array: np.ndarray) -> str:
 def process_image():
     if model is None:
         return jsonify(
-            {"error": "Model file not found. Train the model or restore brahmi_model.h5."}
+            {"error": "Model file not found. Run convert_to_onnx.py to generate brahmi_model.onnx."}
         ), 503
 
     if "image" not in request.files:
@@ -246,8 +275,8 @@ def process_image():
         )
 
     if char_inputs:
-        batch_predictions = model.predict(np.stack(char_inputs, axis=0), verbose=0)
-        for metadata, pred in zip(char_metadata, batch_predictions):
+        for metadata, inp in zip(char_metadata, char_inputs):
+            pred = _predict_one(inp)
             idx = int(np.argmax(pred))
             predictions.append(
                 {

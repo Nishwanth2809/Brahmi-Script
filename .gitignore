@@ -2,6 +2,10 @@
 dataset/
 *.h5
 !brahmi_model.h5
+*.onnx
+!brahmi_model.onnx
+# Temporary SavedModel dirs created by conversion scripts
+brahmi_savedmodel_tmp/
 
 # Virtual Environment
 .venv/
